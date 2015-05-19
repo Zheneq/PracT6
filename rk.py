@@ -52,6 +52,7 @@ def rungekuttavec(t, yv, fv, h):
 def solve(fv, y0v, step, stepcount = 100, x0 = 0.0):
     x = x0
     yv = y0v
+    stepcount = int(stepcount)
     graph = [[] for i in xrange(len(fv))]
     for i in xrange(stepcount):
         yv = rungekuttavec(x, yv, fv, step)
