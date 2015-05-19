@@ -47,3 +47,15 @@ def rungekuttavec(t, yv, fv, h):
     ), res, [0. for q in xrange(len(yv))])
     res = map(lambda _vec1, _vec2: _vec1 + _vec2, yv, res)
     return res
+
+
+def solve(fv, y0v, step, stepcount = 100, x0 = 0.0):
+    x = x0
+    yv = y0v
+    graph = [[] for i in xrange(len(fv))]
+    for i in xrange(stepcount):
+        yv = rungekuttavec(x, yv, fv, step)
+        x += step
+        for j in xrange(len(fv)):
+            graph[j].append([x, yv[j]])
+    return graph
