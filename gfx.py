@@ -47,7 +47,9 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self.ui.gfxBase.addLegend()
-        self.ui.gfxPhase.addLegend()
+        self.ui.gfxPhase1.addLegend()
+        self.ui.gfxPhase2.addLegend()
+        self.ui.gfxPhase3.addLegend()
 
         self.p = {}
         self.p["D"] = 0.0
@@ -60,7 +62,8 @@ class MainWindow(QMainWindow):
             (self.ui.txtA, "A"),
             (self.ui.txtB, "B"),
             (self.ui.txtC, "C"),
-            (self.ui.txtW, "W"),
+            (self.ui.txtD, "D"),
+            (self.ui.txtQ, "Q"),
             (self.ui.txtEps, "EPS")
         ]
         self.inputs["notresetting"] = [
@@ -74,13 +77,13 @@ class MainWindow(QMainWindow):
         self.ui = None
 
     def func1(self, t, yv):
-        return self.p["A"] + self.p["C"] * math.cos(self.p["W"] * yv[2]) - (self.p["B"] + 1) * yv[0] + yv[1] * yv[0]**2
+        return 1 - self.p["B"] * yv[0] - yv[0] * yv[1]**2 - self.p["Q"] * yv[0] * yv[1] + yv[2]
 
     def func2(self, t, yv):
-        return self.p["B"] * yv[0] - yv[1] * yv[0]**2
+        return self.p["A"] * (yv[0] * yv[1]**2 - yv[1] + self.p["D"])
 
     def func3(self, t, yv):
-        return 1
+        return self.p["C"] * (self.p["Q"] * yv[0] * yv[1] - yv[2])
 
     def parseinput(self, type):
         inputs = self.inputs[type]
@@ -101,9 +104,17 @@ class MainWindow(QMainWindow):
         self.parseinput("notresetting")
         self.parseinput("resetting")
 
-        self.y[0] = self.p["A"] + self.p["C"] * math.cos(self.p["W"] * self.p["D"]) + self.p["EPS"]
-        self.y[1] = self.p["B"] / self.y[0] + self.p["EPS"]
-        self.y[2] = self.p["D"] + self.p["EPS"]
+        # _p = self.p["B"] - (self.p["D"] + 1)**2 / 3.
+        # _q = (-2. * (self.p["D"] + 1)**3 + 9. * (self.p["D"] + 1) * self.p["B"] - 27. * self.p["B"] * self.p["D"])
+        # _d = _q**2 - 4/27. * _p**3
+        #
+        # _w_1 = (.5 * (-_q + math.sqrt(_d)))**(1/3.)
+        # _w_2 = (.5 * (-_q - math.sqrt(_d)))**(1/3.)
+
+        self.y[1] = .636523 + self.p["EPS"]
+
+        self.y[0] = (self.p["D"] + 1. - self.y[1])/self.p["B"] + self.p["EPS"]
+        self.y[2] = self.p["Q"] * self.y[0] * self.y[1] + self.p["EPS"]
 
         self.cont()
 
@@ -111,7 +122,8 @@ class MainWindow(QMainWindow):
         self.parseinput("notresetting")
 
         gfx = solve([self.func1, self.func2, self.func3], self.y, self.p["step"], self.p["num"], self.t)
-        map(lambda x, y: x.extend(y), self.res, gfx)
+        # map(lambda x, y: x.extend(y), self.res, gfx)
+        self.res = gfx
 
         self.y = map(lambda x: x[-1][1], self.res)
         self.t = self.res[0][-1][0]
@@ -123,9 +135,19 @@ class MainWindow(QMainWindow):
             self.ui.gfxBase.plotItem.plot(drawable[i], pen=(i, len(drawable)), name="y"+str(i+1))
 
         drawable = np.array([[self.res[0][i][1], self.res[1][i][1]] for i in xrange(len(self.res[0]))])
-        self.ui.gfxPhase.plotItem.clear()
-        self.ui.gfxPhase.plotItem.legend.items = []
-        self.ui.gfxPhase.plotItem.plot(drawable, pen=(1,1), name="y2(y1)")
+        self.ui.gfxPhase1.plotItem.clear()
+        self.ui.gfxPhase1.plotItem.legend.items = []
+        self.ui.gfxPhase1.plotItem.plot(drawable, pen=(1,1), name="y2(y1)")
+
+        drawable = np.array([[self.res[1][i][1], self.res[2][i][1]] for i in xrange(len(self.res[0]))])
+        self.ui.gfxPhase2.plotItem.clear()
+        self.ui.gfxPhase2.plotItem.legend.items = []
+        self.ui.gfxPhase2.plotItem.plot(drawable, pen=(1,1), name="y3(y2)")
+
+        drawable = np.array([[self.res[2][i][1], self.res[0][i][1]] for i in xrange(len(self.res[0]))])
+        self.ui.gfxPhase3.plotItem.clear()
+        self.ui.gfxPhase3.plotItem.legend.items = []
+        self.ui.gfxPhase3.plotItem.plot(drawable, pen=(1,1), name="y1(y2)")
 # -----------------------------------------------------#
 
 
